@@ -5,8 +5,8 @@ class indexRoutes extends BaseRoute {
    * routes
    */
   public routes(): void {
-    this.router.use("/auth", (req, res) => {
-      console.log(req);
+    this.router.get("/", (req, res) => {
+      res.status(200).send({ status: true, msg: "Success.!" });
     });
   }
 }

@@ -1,23 +1,27 @@
 import express, { Application } from "express";
 import mongoose from "mongoose";
-import bodyParser from "body-parser";
 import { config as dotenv } from "dotenv";
+import bodyParser from "body-parser";
 import indexRoutes from "./routes/index";
 import { Server, Socket } from "socket.io";
 import { createServer } from "http";
 
 class App {
   public app: Application;
-  public server;
+  public server: any;
   public io: Server;
 
   constructor() {
+    dotenv();
     this.app = express();
     this.isPlugin();
     this.routes();
-    dotenv();
     this.server = createServer(this.app);
-    this.io = new Server(this.server);
+    this.io = new Server(this.server, {
+      cors: {
+        origin: "*",
+      },
+    });
     this.broadcast();
   }
 
@@ -31,8 +35,12 @@ class App {
   }
 
   protected broadcast(): void {
-    this.io.on("connection", (socket: Socket) => {
+    this.io.on("connection", async (socket: Socket) => {
       console.log(socket.id);
+      //disconnect or offline user
+      socket.on("disconnect", (reason) => {
+        console.log(`${reason} : ${socket.id}`);
+      });
     });
   }
 }
