@@ -1,8 +1,7 @@
-import express, { Application } from "express";
-import bodyParser from "body-parser";
-import { config as dotenv } from "dotenv";
-import io from "socket.io-client";
 import { Socket } from "dgram";
+import { config as dotenv } from "dotenv";
+import express, { Application } from "express";
+import io from "socket.io-client";
 
 class App {
   public app: Application;
@@ -10,21 +9,8 @@ class App {
   constructor() {
     console.clear();
     this.app = express();
-    this.package();
-    this.routes();
     dotenv();
     this.broadcast();
-  }
-
-  protected package(): void {
-    this.app.use(bodyParser.json());
-    this.app.use(bodyParser.urlencoded({ extended: false }));
-  }
-
-  protected routes(): void {
-    this.app.get("/", (req, res) => {
-      res.status(200).send({ msg: "running" });
-    });
   }
 
   protected broadcast(): void {

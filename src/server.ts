@@ -1,10 +1,9 @@
-import express, { Application } from "express";
-import mongoose from "mongoose";
-import { config as dotenv } from "dotenv";
 import bodyParser from "body-parser";
-import indexRoutes from "./routes/index";
-import { Server, Socket } from "socket.io";
+import { config as dotenv } from "dotenv";
+import express, { Application } from "express";
 import { createServer } from "http";
+import mongoose from "mongoose";
+import { Server, Socket } from "socket.io";
 
 class App {
   public app: Application;
@@ -12,9 +11,10 @@ class App {
   public io: Server;
 
   constructor() {
+    console.clear();
     dotenv();
     this.app = express();
-    this.isPlugin();
+    this.package();
     this.routes();
     this.server = createServer(this.app);
     this.io = new Server(this.server, {
@@ -25,18 +25,23 @@ class App {
     this.broadcast();
   }
 
-  protected isPlugin(): void {
+  protected package(): void {
     this.app.use(bodyParser.json());
     this.app.use(bodyParser.urlencoded({ extended: false }));
   }
 
-  protected routes(): void {
-    this.app.use(indexRoutes);
-  }
+  protected routes(): void {}
 
   protected broadcast(): void {
     this.io.on("connection", async (socket: Socket) => {
+      // check data userId newF
       console.log(socket.id);
+
+      //listen and send message ent to end
+      socket.on("chatMessage", async (msg: Socket) => {
+        this.io.emit("hello", { msg: "tes" });
+      });
+
       //disconnect or offline user
       socket.on("disconnect", (reason) => {
         console.log(`${reason} : ${socket.id}`);
@@ -45,8 +50,9 @@ class App {
   }
 }
 
-const app: Application = new App().app;
-const mongoCon: string = `mongodb://${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_DATABASE}?authSource=admin`;
+const app = new App().server;
+const mongoCon: string = `mongodb://${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGODB_DATABASE}?authSource=admin`;
+
 mongoose
   .connect(mongoCon, {
     useNewUrlParser: true,
@@ -56,18 +62,9 @@ mongoose
   })
   .then(() => {
     app.listen(process.env.PORT, () => {
-      console.clear();
-      console.log(`                          `);
-      console.log(`##   ##  ######   #######`);
-      console.log(`##   ##  ##  ##   ##     `);
-      console.log(` ## ##   #####    #######`);
-      console.log(`  ###    ##  ##        ##`);
-      console.log(`   #     ##   ##  #######`);
-      console.log(`                          `);
-      console.log(`(virtual reality school)`);
       console.log(`⚡️[server ${process.env.NODE_ENV}] running on PORT ${process.env.PORT}`);
     });
   })
   .catch((err) => {
-    console.error(`[monggose error connection -> {server.js}] ${err}`);
+    console.log(err);
   });
