@@ -1,13 +1,12 @@
 import BaseRoute from "./BaseRoutes";
+import UserRoute from "./sub/UserRoute";
 
 class indexRoutes extends BaseRoute {
   /**
    * routes
    */
   public routes(): void {
-    this.router.get("/", (req, res) => {
-      res.status(200).send({ status: true, msg: "Success.!" });
-    });
+    this.router.use("/user", UserRoute);
   }
 }
 
