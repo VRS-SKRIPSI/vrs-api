@@ -17,6 +17,7 @@ interface iUserController {
   changePassword(req: Request, res: Response): Promise<Response>;
   checkAlreadyKey(req: Request, res: Response): Promise<Response>;
   getAllUser(req: Request, res: Response): Promise<Response>;
+  reSendEmail(req: Request, res: Response): Promise<Response>;
 }
 
 class UserController implements iUserController {
@@ -253,6 +254,38 @@ class UserController implements iUserController {
       console.log("err get all user", err.message);
       return res.status(500).send({ status: 500, msg: "Failed.!", err: "Something went wrong.!", data: null });
     }
+  }
+
+  /**
+   * reSendEmail
+   */
+  public async reSendEmail(req: Request, res: Response): Promise<Response> {
+    const { username, ctx } = req.query;
+    const data = await UserRepository.findOne<{ username: string }>({ username: `${username}` });
+    if (data === null) {
+      return res.status(404).send({ status: 404, msg: "Failed user not found.!", err: "invalid username.!", data: null });
+    }
+
+    if (ctx === "reset-password") {
+      EmailService.sender({
+        to: `${data.email}`,
+        subject: "otp forget-password",
+        text: "verification forget-password",
+        html: `<p><b>Silahkan untuk melanjutkan reset password <a href="${process.env.FRONT_URL}/auth/forget-password?username=${data.username}&ref=${data.confidential.linkResetPassword}">klik me</a></b></p>`,
+      });
+      return res.status(200).send({ status: 200, msg: "Success.!", err: null, data: data });
+    }
+
+    if (ctx === "activation") {
+      EmailService.sender({
+        to: `${data.email}`,
+        subject: "otp verification",
+        text: "verification",
+        html: `<p><b>Kode otp anda adalah : <h3>${data.confidential.activationCode}</h3></b></p><br/><p><b>Atau <a href="${process.env.FRONT_URL}/auth/verification/${data.username}?ctx=verification">klik me</a> untuk melanjutkan verifikasi</b></p>`,
+      });
+      return res.status(200).send({ status: 200, msg: "Success.!", err: null, data: data });
+    }
+    return res.status(404).send({ status: 404, msg: "Failed ctx not found.!", err: "invalid ctx.!", data: null });
   }
 }
 
