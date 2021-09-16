@@ -1,0 +1,19 @@
+###
+//getStreaming
+GET http://localhost:3001/api/v1/streaming
+
+
+###
+//getStreaming
+POST http://localhost:3001/api/v1/streaming/create
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYxMzFmOWQzMzUzYzQ3MjNhNDM2NDc2MSIsInVzZXJuYW1lIjoiYXB1eXN0ZXJlbyIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNjMwNjY1MjAwLCJleHAiOjE2MzA2Njg4MDB9.TV-k7fULtX38IX-RsHwjakICDARpcgamWy0GZBeBWJt-CI-9JYK-xxKLiOnyOKMH
+
+  {
+    "_userId":"6128ca8ab315610a2411e787",
+    "title": "PENGAJIAN AHAD PAGI || 03-09-2021",
+    "tags": "ahad-pagi, alhikam, kedunglo",
+    "isPrivate": false,
+    "desc": "-"
+  }

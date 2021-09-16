@@ -7,7 +7,7 @@ class CleanInput implements iCleanInput {
    * clearExtraSpaces
    */
   public clearExtraSpaces(str: string): string {
-    return str.replace(/\s+/g, " ").trim().toLowerCase();
+    return str.replace(/\s+/g, " ").trim();
   }
 
   /**

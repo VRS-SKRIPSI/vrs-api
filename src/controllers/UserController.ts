@@ -16,7 +16,6 @@ interface iUserController {
   forgetPassword(req: Request, res: Response): Promise<Response>;
   changePassword(req: Request, res: Response): Promise<Response>;
   checkAlreadyKey(req: Request, res: Response): Promise<Response>;
-  getAllUser(req: Request, res: Response): Promise<Response>;
   reSendEmail(req: Request, res: Response): Promise<Response>;
 }
 
@@ -40,6 +39,10 @@ class UserController implements iUserController {
 
       if (!data.validPassword(req.body.password)) {
         return res.status(400).send({ status: 400, msg: "Failed login.!", err: "wrong password.!", data: null });
+      }
+
+      if (!data.confidential.isActivated) {
+        return res.status(400).send({ status: 400, msg: "Failed login.!", err: "account not activated.!", data: null });
       }
 
       const token = Jwt.sign({ id: data.id, username: data.username, role: data.roles }, priveteKey, { algorithm: "HS384", expiresIn: "1h" });
@@ -71,11 +74,15 @@ class UserController implements iUserController {
         }
       }
       const data = await UserRepository.create(req.body, eRoles.user, aCode);
+      const urlHref: string = `${process.env.FRONT_URL}/auth/verification/me/${data.username}?code=${aCode}`;
+      console.log(urlHref);
       EmailService.sender({
         to: `${data.email}`,
         subject: "otp verification",
         text: "verification",
-        html: `<p><b>Kode otp anda adalah : <h3>${aCode}</h3></b></p><br/><p><b>Atau <a href="url">klik me</a> untuk melanjutkan verifikasi</b></p>`,
+        html: `<p><b>Kode otp anda adalah : <h3>${aCode}</h3></b></p><br/><p><b>Atau <a href="${urlHref}">klik me</a> untuk melanjutkan verifikasi</b></p>`,
+      }).catch((err) => {
+        console.log(err);
       });
       return res.status(200).send({ status: 200, msg: "Success register.!", err: null, data: data });
     } catch (error) {
@@ -108,11 +115,11 @@ class UserController implements iUserController {
   public async activation(req: Request, res: Response): Promise<Response> {
     try {
       const user = await UserRepository.findOne<{ $and: [{ "confidential.activationCode": string }, { username: string }] }>({
-        $and: [{ "confidential.activationCode": req.params.code }, { username: req.params.username }],
+        $and: [{ "confidential.activationCode": req.params.code.toUpperCase() }, { username: req.params.username }],
       });
 
       if (user === null) {
-        return res.status(404).send({ status: 404, msg: "Failed user not found.!", err: null, data: null });
+        return res.status(404).send({ status: 404, msg: "Failed user not found.!", err: "invalid otp or username!", data: null });
       }
 
       if (user.confidential.isActivated) {
@@ -123,7 +130,7 @@ class UserController implements iUserController {
         { _id: user._id },
         { "confidential.isActivated": true, "confidential.activatedAt": new Date() }
       );
-      return res.status(200).send({ status: 200, msg: "Success.!", err: null, data: data });
+      return res.status(200).send({ status: 200, msg: "Success activation account.!", err: null, data: data });
     } catch (error) {
       return res.status(500).send({ status: 500, msg: "Failed.!", err: "Something went wrong.!", data: null });
     }
@@ -144,13 +151,19 @@ class UserController implements iUserController {
       if (data === null) {
         return res.status(404).send({ status: 404, msg: "Failed request link reset password.!", err: "Email not found, try again.!", data: null });
       }
+      console.log(
+        "url reset-password",
+        `${process.env.FRONT_URL}/auth/reset-password?username=${data.username}&key=${data.confidential.linkResetPassword}`
+      );
 
       //kirim email
       EmailService.sender({
         to: `${data.email}`,
         subject: "otp forget-password",
         text: "verification forget-password",
-        html: `<p><b>Silahkan untuk melanjutkan reset password <a href="${process.env.FRONT_URL}/auth/forget-password?username=${data.username}&ref=${data.confidential.linkResetPassword}">klik me</a></b></p>`,
+        html: `<p><b>Silahkan untuk melanjutkan reset password <a href="${process.env.FRONT_URL}/auth/reset-password?username=${data.username}&key=${data.confidential.linkResetPassword}">klik me</a></b></p>`,
+      }).catch((err) => {
+        console.log(err);
       });
       return res.status(200).send({ status: 200, msg: "Success request link reset password.!", err: null, data: data });
     } catch (error) {
@@ -166,19 +179,35 @@ class UserController implements iUserController {
     const { username, link } = req.params;
     const { nPassword, cPassword } = req.body;
     try {
+      const userCheck = await UserRepository.findOne<{ $and: [{ username: string }, { "confidential.linkResetPassword": string }] }>({
+        $and: [{ username: username }, { "confidential.linkResetPassword": link }],
+      });
+
+      if (userCheck === null) {
+        return res.status(403).send({ status: 403, msg: "Failed reset password.!", err: "invalid username or link", data: null });
+      }
+
+      if (userCheck.confidential.linkResetPassword === null) {
+        return res.status(403).send({ status: 403, msg: "Failed reset password.!", err: "invalid username or link", data: null });
+      }
+
       if (nPassword !== cPassword) {
         return res.status(403).send({ status: 403, msg: "Failed reset password.!", err: "password doesn't match.!", data: null });
       }
       const setPassword = this.setPassword(nPassword);
       const data = await UserRepository.findOneAndUpdate<
         { $and: [{ username: string }, { "confidential.linkResetPassword": string }] },
-        { "confidential.password": string; "confidential.salt": string }
+        { "confidential.password": string; "confidential.salt": string; "confidential.linkResetPassword": null }
       >(
         {
           $and: [{ username: username }, { "confidential.linkResetPassword": link }],
         },
-        { "confidential.password": setPassword.password, "confidential.salt": setPassword.salt }
+        { "confidential.password": setPassword.password, "confidential.salt": setPassword.salt, "confidential.linkResetPassword": null }
       );
+
+      if (data === null) {
+        return res.status(403).send({ status: 403, msg: "Failed reset password.!", err: "invalid username or link", data: null });
+      }
 
       return res.status(200).send({ status: 200, msg: "Success reset password.!", err: null, data: data });
     } catch (error) {
@@ -243,49 +272,51 @@ class UserController implements iUserController {
   }
 
   /**
-   * getAllUser
-   */
-  public async getAllUser(req: Request, res: Response): Promise<Response> {
-    try {
-      const data = await UserRepository.findAll(1, 10);
-      return res.status(200).send({ status: 200, msg: "Success.!", err: null, data: data });
-    } catch (error) {
-      const err = error as NativeError;
-      console.log("err get all user", err.message);
-      return res.status(500).send({ status: 500, msg: "Failed.!", err: "Something went wrong.!", data: null });
-    }
-  }
-
-  /**
    * reSendEmail
    */
   public async reSendEmail(req: Request, res: Response): Promise<Response> {
-    const { username, ctx } = req.query;
+    const { username, ctx } = req.params;
     const data = await UserRepository.findOne<{ username: string }>({ username: `${username}` });
     if (data === null) {
       return res.status(404).send({ status: 404, msg: "Failed user not found.!", err: "invalid username.!", data: null });
     }
 
     if (ctx === "reset-password") {
+      if (data.confidential.linkResetPassword === null) {
+        return res.status(403).send({ status: 403, msg: "Failed resend link reset-password.!", err: "link is empty.!", data: null });
+      }
+
+      const urlResetPassword: string = `${process.env.FRONT_URL}/auth/reset-password?username=${data.username}&key=${data.confidential.linkResetPassword}`;
+      console.log("url reset password", urlResetPassword);
       EmailService.sender({
         to: `${data.email}`,
         subject: "otp forget-password",
         text: "verification forget-password",
-        html: `<p><b>Silahkan untuk melanjutkan reset password <a href="${process.env.FRONT_URL}/auth/forget-password?username=${data.username}&ref=${data.confidential.linkResetPassword}">klik me</a></b></p>`,
+        html: `<p><b>Silahkan untuk melanjutkan reset password <a href="${urlResetPassword}">klik me</a></b></p>`,
+      }).catch((err) => {
+        console.log(err);
       });
-      return res.status(200).send({ status: 200, msg: "Success.!", err: null, data: data });
+      return res.status(200).send({ status: 200, msg: "Success resend email link forget-password.!", err: null, data: data });
     }
 
     if (ctx === "activation") {
+      const urlActivation: string = `${process.env.FRONT_URL}/auth/verification/me/${data.username}?code=${data.confidential.activationCode}`;
+      console.log(urlActivation);
+      if (data.confidential.isActivated) {
+        return res.status(200).send({ status: 200, msg: "Success account has been activated.!", err: null, data: data });
+      }
       EmailService.sender({
         to: `${data.email}`,
         subject: "otp verification",
         text: "verification",
-        html: `<p><b>Kode otp anda adalah : <h3>${data.confidential.activationCode}</h3></b></p><br/><p><b>Atau <a href="${process.env.FRONT_URL}/auth/verification/${data.username}?ctx=verification">klik me</a> untuk melanjutkan verifikasi</b></p>`,
+        html: `<p><b>Kode otp anda adalah : <h3>${data.confidential.activationCode}</h3></b></p><br/><p><b>Atau <a href="${urlActivation}">klik me</a> untuk melanjutkan verifikasi</b></p>`,
+      }).catch((err) => {
+        console.log(err);
       });
-      return res.status(200).send({ status: 200, msg: "Success.!", err: null, data: data });
+      return res.status(200).send({ status: 200, msg: "Success resend email link || otp activation.!", err: null, data: data });
     }
-    return res.status(404).send({ status: 404, msg: "Failed ctx not found.!", err: "invalid ctx.!", data: null });
+
+    return res.status(400).send({ status: 400, msg: "Failed ctx not found.!", err: "invalid ctx.!", data: null });
   }
 }
 

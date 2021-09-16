@@ -30,6 +30,7 @@ class App {
       },
     });
     this.broadcast();
+    console.log("diinitialisasi socket io nya", this.io);
   }
 
   protected package(): void {
@@ -65,6 +66,7 @@ class App {
 }
 
 const app = new App().server;
+export const socketIo = new App().io;
 const mongoCon: string = `mongodb://${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGODB_DATABASE}?authSource=admin`;
 
 mongoose

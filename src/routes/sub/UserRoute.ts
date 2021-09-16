@@ -25,7 +25,7 @@ class UserRoute extends BaseRoute {
       "/auth/register",
       [
         body("username").notEmpty().isString().isLength({ min: 6, max: 30 }),
-        body("fullName").notEmpty().isString().isLength({ min: 1, max: 20 }),
+        body("fullName").notEmpty().isString().isLength({ min: 1, max: 30 }),
         body("email").notEmpty().isString().isEmail(),
         body("password").notEmpty().isString(),
         body("cPassword").notEmpty().isString(),
@@ -63,7 +63,7 @@ class UserRoute extends BaseRoute {
       UserController.forgetPassword.bind(UserController)
     );
 
-    this.router.get("/all", [query("page").notEmpty().isInt(), query("limit").notEmpty().isInt(), this.preRequest], UserController.getAllUser);
+    this.router.get("/auth/resend-email/:username/:ctx", UserController.reSendEmail);
   }
 }
 
