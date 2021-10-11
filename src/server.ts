@@ -30,7 +30,6 @@ class App {
       },
     });
     this.broadcast();
-    console.log("diinitialisasi socket io nya", this.io);
   }
 
   protected package(): void {
