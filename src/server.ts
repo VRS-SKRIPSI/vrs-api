@@ -7,9 +7,11 @@ import { Server, Socket } from "socket.io";
 import mainRoute from "./routes";
 import UserSeed from "./seeds/UserSeed";
 import cors from "cors";
+import StreamingRepository from "./repositorys/StreamingRepository";
 
 interface iRequestStream {
-  id: string;
+  _streamingId: string;
+  _userId: string;
 }
 
 class App {
@@ -43,7 +45,7 @@ class App {
   }
 
   protected broadcast(): void {
-    this.io.on("connection", async (socket: Socket) => {
+    this.io.on("connection", async (socket) => {
       console.log(socket.id);
       //listen and send message ent to end
       socket.on("textCaptionRequest", async (msg: Socket) => {
@@ -51,9 +53,21 @@ class App {
       });
 
       //request stream
-      socket.on("requestStream", async (msg: Socket<iRequestStream>) => {
+      socket.on("requestStream", async (msg: any) => {
         console.log("message", msg);
         this.io.emit("resultUserRequest", msg);
+      });
+
+      socket.on("join-room", (roomId, userId) => {
+        console.log("roomId", `${roomId} ++ userId ${userId}`);
+
+        socket.join(roomId);
+        // socket.to(roomId).emit("user-connected", userId);
+        this.io.to(roomId).emit("user-connected", userId);
+
+        socket.on("disconnect-stream", () => {
+          this.io.to(roomId).emit("user-disconnected", userId);
+        });
       });
 
       //disconnect or offline user
@@ -65,7 +79,6 @@ class App {
 }
 
 const app = new App().server;
-export const socketIo = new App().io;
 const mongoCon: string = `mongodb://${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGODB_DATABASE}?authSource=admin`;
 
 mongoose

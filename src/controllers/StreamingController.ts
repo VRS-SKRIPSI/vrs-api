@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { NativeError } from "mongoose";
 import { iToken } from "../interfaces/tokenInterface";
 import StreamingRepository from "../repositorys/StreamingRepository";
-import { socketIo } from "../server";
 import StreamingService from "../services/StreamingService";
 
 interface iStreamingController {
@@ -39,8 +38,6 @@ class StreamingController implements iStreamingController {
     const jwtPayload = res.locals as iToken;
     try {
       const data = await this.streamService.create(req, jwtPayload.id);
-      const socket = socketIo.emit("refStreaming", { id: data._id, slug: data.slug, title: data.title });
-      console.log("info new stream", socket);
       return res.status(200).send({ status: 200, msg: "Success create streaming.!", err: null, data: data });
     } catch (error) {
       const err = error as NativeError;
