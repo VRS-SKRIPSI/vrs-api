@@ -1,7 +1,7 @@
 {
-  "name": "virtual-reality-school",
+  "name": "calling-translator",
   "version": "0.0.1",
-  "description": "skripsi dengan judul virtual reality school",
+  "description": "skripsi dengan judul calling-translator",
   "main": "src/server.js",
   "author": "apuystereo",
   "license": "MIT",
@@ -13,6 +13,8 @@
     "start": "node dist/src/server.js"
   },
   "dependencies": {
+    "@iamtraction/google-translate": "^1.1.2",
+    "@vitalets/google-translate-api": "^7.0.0",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "dotenv": "^9.0.2",

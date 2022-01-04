@@ -27,8 +27,11 @@ class UserRoute extends BaseRoute {
         body("username").notEmpty().isString().isLength({ min: 6, max: 30 }),
         body("fullName").notEmpty().isString().isLength({ min: 1, max: 30 }),
         body("email").notEmpty().isString().isEmail(),
+        body("country").notEmpty().withMessage("country is required.!").isString().withMessage("country is string.!"),
+        body("countryCode").notEmpty().withMessage("countryCode is required.!").isString().withMessage("countryCode is string.!"),
         body("password").notEmpty().isString(),
         body("cPassword").notEmpty().isString(),
+        this.preRequest,
       ],
       UserController.register
     );
@@ -64,6 +67,11 @@ class UserRoute extends BaseRoute {
     );
 
     this.router.get("/auth/resend-email/:username/:ctx", UserController.reSendEmail);
+    this.router.get(
+      "/search",
+      [AuthMiddleware.authorize.bind(AuthMiddleware), query("keyword").notEmpty().isString(), this.preRequest],
+      UserController.searchUser
+    );
   }
 }
 

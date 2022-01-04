@@ -4,7 +4,6 @@ import Jwt from "jsonwebtoken";
 import { NativeError } from "mongoose";
 import { uid } from "uid";
 import { iToken } from "../interfaces/tokenInterface";
-import { eRoles } from "../models/users";
 import UserRepository from "../repositorys/UserRepository";
 import EmailService from "../services/EmailService";
 
@@ -17,6 +16,11 @@ interface iUserController {
   changePassword(req: Request, res: Response): Promise<Response>;
   checkAlreadyKey(req: Request, res: Response): Promise<Response>;
   reSendEmail(req: Request, res: Response): Promise<Response>;
+  searchUser(req: Request, res: Response): Promise<Response>;
+}
+
+interface iQuerySearch {
+  $and: [{ _id: { $ne: any } }, { $or: [{ username: { $regex: string } }, { fullName: { $regex: string } }] }];
 }
 
 class UserController implements iUserController {
@@ -45,7 +49,7 @@ class UserController implements iUserController {
         return res.status(400).send({ status: 400, msg: "Failed login.!", err: "account not activated.!", data: null });
       }
 
-      const token = Jwt.sign({ id: data.id, username: data.username, role: data.roles }, priveteKey, { algorithm: "HS384", expiresIn: "1h" });
+      const token = Jwt.sign({ id: data.id, username: data.username }, priveteKey, { algorithm: "HS384", expiresIn: "24h" });
       const result = {
         user: data.toJSON(),
         accessToken: token,
@@ -69,11 +73,11 @@ class UserController implements iUserController {
         const decoded = Jwt.verify(token, `${process.env.SIGNATURE}`);
         const result = decoded as iToken;
         if (result.role === "dev") {
-          const data = await UserRepository.create(req.body, eRoles.admin, aCode);
+          const data = await UserRepository.create(req.body, aCode);
           return res.status(200).send({ status: 200, msg: "Success.!", err: null, data: data });
         }
       }
-      const data = await UserRepository.create(req.body, eRoles.user, aCode);
+      const data = await UserRepository.create(req.body, aCode);
       const urlHref: string = `${process.env.FRONT_URL}/auth/verification/me/${data.username}?code=${aCode}`;
       console.log(urlHref);
       EmailService.sender({
@@ -317,6 +321,22 @@ class UserController implements iUserController {
     }
 
     return res.status(400).send({ status: 400, msg: "Failed ctx not found.!", err: "invalid ctx.!", data: null });
+  }
+
+  /**
+   * search user
+   */
+  public async searchUser(req: Request, res: Response): Promise<Response> {
+    // console.log("res locals", res.locals);
+    console.log(res.locals.id);
+
+    const data = await UserRepository.findAllQuery<iQuerySearch>({
+      $and: [
+        { _id: { $ne: res.locals.id } },
+        { $or: [{ username: { $regex: `${req.query.keyword}` } }, { fullName: { $regex: `${req.query.keyword}` } }] },
+      ],
+    });
+    return res.status(200).send({ status: 200, msg: "Sucess search users.!", err: null, data: data });
   }
 }
 

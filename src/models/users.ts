@@ -1,12 +1,6 @@
 import { Document, model, Schema } from "mongoose";
 import { randomBytes, pbkdf2Sync } from "crypto";
 
-export enum eRoles {
-  dev = "dev",
-  admin = "admin",
-  user = "user",
-}
-
 interface iConfidential {
   password: String;
   salt: String;
@@ -21,9 +15,10 @@ export interface iUser extends Document {
   fullName: String;
   email: String;
   numberPhone: String;
-  photo_profile?: String;
-  roles: String;
+  photoProfile?: String;
   confidential: iConfidential;
+  country: String;
+  countryCode: String;
   setPassword(password: String): void;
   validPassword(password: String): boolean;
   toWrap(): any;
@@ -36,8 +31,9 @@ const userSchema = new Schema<iUser>(
     fullName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     numberPhone: { type: String, default: null },
-    photo_profile: { type: String, default: null },
-    roles: { type: String, required: true, default: eRoles.admin },
+    photoProfile: { type: String, default: null },
+    country: { type: String, default: null },
+    countryCode: { type: String, default: null },
     confidential: {
       password: { type: String, required: true },
       salt: { type: String, required: true },
@@ -76,8 +72,9 @@ userSchema.methods.toWrap = function () {
     fullName: this.fullName,
     email: this.email,
     numberPhone: this.numberPhone,
-    photo_profile: this.photo_profile,
-    roles: this.roles,
+    photo_profile: this.photoProfile,
+    country: this.country,
+    countryCode: this.countryCode,
   };
 
   return data;

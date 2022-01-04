@@ -9,7 +9,6 @@ interface iAuthorize {
 
 interface iAuthMiddleware {
   authorize(req: Request, res: Response, next: NextFunction): Promise<void | Response | NextFunction>;
-  accessAdimOrDev(req: Request, res: Response, next: NextFunction): Promise<void | Response | NextFunction>;
 }
 
 class AuthMiddleware implements iAuthMiddleware {
@@ -35,17 +34,6 @@ class AuthMiddleware implements iAuthMiddleware {
       const err = error as VerifyErrors;
       return this.response(res, `${err.message}`);
     }
-  }
-
-  /**
-   * adminOrdev
-   */
-  public async accessAdimOrDev(req: Request, res: Response, next: NextFunction): Promise<void | Response | NextFunction> {
-    const jwtPayload = res.locals as iToken;
-    if (jwtPayload.role.toLowerCase() === "dev" || jwtPayload.role.toLowerCase() === "admin") {
-      return next();
-    }
-    return res.status(403).send({ status: 403, msg: "Failed request.!", err: "access denied.!", data: null });
   }
 }
 

@@ -1,4 +1,3 @@
-import { uid } from "uid";
 import users, { iUser } from "../models/users";
 import CleanInput from "../services/CleanInput";
 
@@ -8,20 +7,27 @@ interface iCreate {
   email: string;
   numberPhone?: string;
   isActivated?: boolean;
+  country: String;
+  countryCode: String;
   password: string;
 }
 
 interface iUserRepository {
   findOne<T>(query: T): Promise<iUser | null>;
   findUsernameOrEmail(param: string): Promise<iUser | null>;
-  create(body: iCreate, role: string, activationCode: string): Promise<iUser>;
+  create(body: iCreate, activationCode: string): Promise<iUser>;
   findAll(skip: number, limit: number): Promise<iUser[]>;
+  findAllQuery<T>(query: T): Promise<iUser[]>;
   checkDupKey<T>(query: T, select: string): Promise<iUser | null>;
   updateOne<uid, T>(_id: uid, body: T): Promise<iUser>;
   findOneAndUpdate<_id, T>(_id: _id, body: T): Promise<iUser | null>;
 }
 
 class UserRepository implements iUserRepository {
+  async findAllQuery<T>(query: T): Promise<iUser[]> {
+    return users.find(query).exec();
+  }
+
   async findOne<T>(query: T): Promise<iUser | null> {
     return await users.findOne(query).exec();
   }
@@ -38,15 +44,16 @@ class UserRepository implements iUserRepository {
       .exec();
   }
 
-  async create(body: iCreate, role: string, activationCode: string): Promise<iUser> {
+  async create(body: iCreate, activationCode: string): Promise<iUser> {
     const data = new users();
     data.username = CleanInput.removeSpaces(body.username);
     data.fullName = CleanInput.clearExtraSpaces(body.fullName);
     data.email = body.email;
     if (body.numberPhone !== undefined) data.numberPhone = body.numberPhone;
-    data.roles = role;
     data.confidential.activationCode = activationCode;
     data.confidential.isActivated = body.isActivated ? true : false;
+    data.country = body.country;
+    data.countryCode = body.countryCode;
     data.setPassword(body.password);
     const result = await data.save();
     return result;

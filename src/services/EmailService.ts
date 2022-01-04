@@ -18,7 +18,7 @@ class EmailService implements iEmailService {
   public async sender(payload: iBodyEmail): Promise<string> {
     const mail = nodemailer.createTransport({ service: "Gmail", auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASSWORD } });
     const info = await mail.sendMail({
-      from: '"KEDUNGLOTV" <kedunglotv@kedunglo.com>',
+      from: '"CALLING LANGUAGE TRANSLATOR"',
       to: payload.to,
       subject: payload.subject,
       text: payload.text,

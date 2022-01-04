@@ -1,13 +1,14 @@
+import translate from "@iamtraction/google-translate";
 import bodyParser from "body-parser";
+import cors from "cors";
 import { config as dotenv } from "dotenv";
 import express, { Application } from "express";
 import { createServer } from "http";
 import mongoose from "mongoose";
 import { Server, Socket } from "socket.io";
+import ChatController from "./controllers/chatController";
 import mainRoute from "./routes";
-import UserSeed from "./seeds/UserSeed";
-import cors from "cors";
-import StreamingRepository from "./repositorys/StreamingRepository";
+import countryInitData from "./services/countryInitData";
 
 interface iRequestStream {
   _streamingId: string;
@@ -23,15 +24,16 @@ class App {
     console.clear();
     dotenv();
     this.app = express();
-    this.package();
-    this.routes();
     this.server = createServer(this.app);
     this.io = new Server(this.server, {
       cors: {
         origin: "*",
       },
     });
+    this.package();
+    this.routes();
     this.broadcast();
+    this.initTranslate();
   }
 
   protected package(): void {
@@ -42,14 +44,25 @@ class App {
   protected routes(): void {
     this.app.use(cors());
     this.app.use("/api/v1", mainRoute);
+    // this.app.post("/ws", new ChatController(this.io).sendMessage.bind(new ChatController(this.io)));
   }
 
   protected broadcast(): void {
     this.io.on("connection", async (socket) => {
-      console.log(socket.id);
+      console.log("form app", socket.id);
+
       //listen and send message ent to end
-      socket.on("textCaptionRequest", async (msg: Socket) => {
-        this.io.emit("textCaptionResponse", msg);
+      socket.on("textCaptionRequest", async (msg) => {
+        await translate(`${msg.msg.length >= 1 ? msg.msg : "hello world"}`, { from: "id", to: `${msg.language}` })
+          .then((r) => {
+            console.log("---------------------------------------------------------------");
+            console.log(`from id: ${msg.msg}`);
+            console.log(`to ${msg.language}: ${JSON.stringify(r.text)}`);
+            console.log("---------------------------------------------------------------");
+          })
+          .catch((err) => {
+            console.log("translate", err);
+          });
       });
 
       //request stream
@@ -76,6 +89,16 @@ class App {
       });
     });
   }
+
+  private async initTranslate(): Promise<void> {
+    await translate(`ketika semua terasa begitu berat!`, { from: "id", to: "en" })
+      .then((r) => {
+        console.log("initial translate.text", r.text);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }
 }
 
 const app = new App().server;
@@ -91,7 +114,7 @@ mongoose
   .then(async () => {
     app.listen(process.env.PORT, () => {
       console.log(`⚡️[server ${process.env.NODE_ENV}] running on PORT ${process.env.PORT}`);
-      new UserSeed();
+      new countryInitData();
     });
   })
   .catch((err) => {

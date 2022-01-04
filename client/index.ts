@@ -5,7 +5,7 @@ import io from "socket.io-client";
 
 class App {
   public app: Application;
-  public socket = io("http://localhost:3001");
+  public socket = io("http://localhost:4000");
   constructor() {
     console.clear();
     this.app = express();
@@ -18,7 +18,7 @@ class App {
       console.log(`⚡️[client ${process.env.NODE_ENV}] running on PORT ${3002}`);
     });
 
-    this.socket.on("hello", (msg: Socket) => {
+    this.socket.on("room", (msg: Socket) => {
       console.log(JSON.stringify(msg));
     });
   }
