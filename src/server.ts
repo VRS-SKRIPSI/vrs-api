@@ -1,19 +1,13 @@
-import translate from "@iamtraction/google-translate";
+import translate from "@vitalets/google-translate-api";
 import bodyParser from "body-parser";
 import cors from "cors";
 import { config as dotenv } from "dotenv";
 import express, { Application } from "express";
 import { createServer } from "http";
 import mongoose from "mongoose";
-import { Server, Socket } from "socket.io";
-import ChatController from "./controllers/chatController";
+import { Server } from "socket.io";
 import mainRoute from "./routes";
 import countryInitData from "./services/countryInitData";
-
-interface iRequestStream {
-  _streamingId: string;
-  _userId: string;
-}
 
 class App {
   public app: Application;
@@ -50,37 +44,73 @@ class App {
   protected broadcast(): void {
     this.io.on("connection", async (socket) => {
       console.log("form app", socket.id);
+      socket.on("calling", (msg) => {
+        this.io.emit(msg.data._toUserId, msg);
+      });
+
+      socket.on("reject", (msg) => {
+        this.io.emit(msg.data._fromUserId, msg);
+      });
+
+      socket.on("answer", (msg) => {
+        this.io.emit(msg.data._fromUserId, msg);
+      });
+
+      socket.on("join-room", (roomId, _userId) => {
+        console.log("roomId", `${roomId} ++ userId ${_userId}`);
+        socket.join(roomId);
+        socket.to(roomId).emit("user-connected", _userId);
+        console.log(socket.rooms);
+        socket.on("transcript", async (roomId, msg) => {
+          if (msg.msg.length >= 1) {
+            return await translate(msg.msg, { from: msg.fromLang, to: msg.toLang })
+              .then((r) => {
+                console.log("msg dan roomid", msg);
+                socket.to(roomId).emit("transcript-callback", r.text);
+                // this.io.emit(msg.receiverId, JSON.stringify(r.text));
+                console.log("---------------------------------------------------------------");
+                console.log(`from ${msg.fromLang}: ${msg.msg}`);
+                console.log(`to ${msg.toLang}: ${JSON.stringify(r.text)}`);
+                console.log("---------------------------------------------------------------");
+              })
+              .catch((err) => {
+                console.log("translate", err);
+              });
+          }
+        });
+        socket.on("call-disconnected", (roomId, msg) => {
+          if (msg.identity) {
+            socket.emit(msg.data._fromUserId, msg);
+          } else {
+            this.io.emit(msg.data._toUserId, msg);
+          }
+          console.log(msg);
+          socket.leave(roomId);
+        });
+      });
 
       //listen and send message ent to end
       socket.on("textCaptionRequest", async (msg) => {
-        await translate(`${msg.msg.length >= 1 ? msg.msg : "hello world"}`, { from: "id", to: `${msg.language}` })
-          .then((r) => {
-            console.log("---------------------------------------------------------------");
-            console.log(`from id: ${msg.msg}`);
-            console.log(`to ${msg.language}: ${JSON.stringify(r.text)}`);
-            console.log("---------------------------------------------------------------");
-          })
-          .catch((err) => {
-            console.log("translate", err);
-          });
+        if (msg.msg.length >= 1) {
+          return await translate(msg.msg, { from: "id", to: msg.language })
+            .then((r) => {
+              console.log(msg);
+              this.io.emit(msg.receiverId, JSON.stringify(r.text));
+              console.log("---------------------------------------------------------------");
+              console.log(`from id: ${msg.msg}`);
+              console.log(`to ${msg.language}: ${JSON.stringify(r.text)}`);
+              console.log("---------------------------------------------------------------");
+            })
+            .catch((err) => {
+              console.log("translate", err);
+            });
+        }
       });
 
       //request stream
       socket.on("requestStream", async (msg: any) => {
         console.log("message", msg);
         this.io.emit("resultUserRequest", msg);
-      });
-
-      socket.on("join-room", (roomId, userId) => {
-        console.log("roomId", `${roomId} ++ userId ${userId}`);
-
-        socket.join(roomId);
-        // socket.to(roomId).emit("user-connected", userId);
-        this.io.to(roomId).emit("user-connected", userId);
-
-        socket.on("disconnect-stream", () => {
-          this.io.to(roomId).emit("user-disconnected", userId);
-        });
       });
 
       //disconnect or offline user

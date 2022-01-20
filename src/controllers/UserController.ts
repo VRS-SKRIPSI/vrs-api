@@ -49,7 +49,7 @@ class UserController implements iUserController {
         return res.status(400).send({ status: 400, msg: "Failed login.!", err: "account not activated.!", data: null });
       }
 
-      const token = Jwt.sign({ id: data.id, username: data.username }, priveteKey, { algorithm: "HS384", expiresIn: "24h" });
+      const token = Jwt.sign({ id: data.id, username: data.username }, priveteKey, { algorithm: "HS384", expiresIn: "168h" });
       const result = {
         user: data.toJSON(),
         accessToken: token,
