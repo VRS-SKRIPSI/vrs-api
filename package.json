@@ -10,7 +10,11 @@
     "ts": "rm -rf build/ && tsc -w",
     "dev": "nodemon src/server.ts",
     "cl": "nodemon client/index.ts",
-    "start": "node dist/src/server.js"
+    "start": "node dist/src/server.js",
+    "peer": "peerjs --port 9001 --key peerjs --path /myapp",
+    "ssl1": "local-ssl-proxy --source 3000 --target 3001",
+    "ssl2": "local-ssl-proxy --source 4000 --target 4001",
+    "ssl3": "local-ssl-proxy --source 9000 --target 9001"
   },
   "dependencies": {
     "@iamtraction/google-translate": "^1.1.2",

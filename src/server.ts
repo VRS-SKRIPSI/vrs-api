@@ -61,32 +61,28 @@ class App {
         socket.join(roomId);
         socket.to(roomId).emit("user-connected", _userId);
         console.log(socket.rooms);
-        socket.on("transcript", async (roomId, msg) => {
-          if (msg.msg.length >= 1) {
-            return await translate(msg.msg, { from: msg.fromLang, to: msg.toLang })
-              .then((r) => {
-                console.log("msg dan roomid", msg);
-                socket.to(roomId).emit("transcript-callback", r.text);
-                // this.io.emit(msg.receiverId, JSON.stringify(r.text));
-                console.log("---------------------------------------------------------------");
-                console.log(`from ${msg.fromLang}: ${msg.msg}`);
-                console.log(`to ${msg.toLang}: ${JSON.stringify(r.text)}`);
-                console.log("---------------------------------------------------------------");
-              })
-              .catch((err) => {
-                console.log("translate", err);
-              });
-          }
-        });
-        socket.on("call-disconnected", (roomId, msg) => {
-          if (msg.identity) {
-            socket.emit(msg.data._fromUserId, msg);
-          } else {
-            this.io.emit(msg.data._toUserId, msg);
-          }
-          console.log(msg);
-          socket.leave(roomId);
-        });
+      });
+
+      socket.on("transcript", async (roomId, msg) => {
+        if (msg.msg.length >= 1) {
+          return await translate(msg.msg, { from: msg.fromLang, to: msg.toLang })
+            .then((r) => {
+              console.log("msg dan roomid", msg);
+              socket.to(roomId).emit("transcript-callback", r.text);
+              // this.io.emit(msg.receiverId, JSON.stringify(r.text));
+              console.log("---------------------------------------------------------------");
+              console.log(`from ${msg.fromLang}: ${msg.msg}`);
+              console.log(`to ${msg.toLang}: ${JSON.stringify(r.text)}`);
+              console.log("---------------------------------------------------------------");
+            })
+            .catch((err) => {
+              console.log("translate", err);
+            });
+        }
+      });
+      socket.on("call-disconnected", (roomId) => {
+        socket.leave(roomId);
+        socket.to(roomId).emit("user-disconnected", socket.id);
       });
 
       //listen and send message ent to end
