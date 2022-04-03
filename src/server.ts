@@ -48,6 +48,10 @@ class App {
         this.io.emit(msg.data._toUserId, msg);
       });
 
+      socket.on("cancel-calling", (msg) => {
+        this.io.emit(msg.data._toUserId, msg);
+      });
+
       socket.on("reject", (msg) => {
         this.io.emit(msg.data._fromUserId, msg);
       });
