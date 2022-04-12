@@ -52,6 +52,10 @@ class App {
         this.io.emit(msg.data._toUserId, msg);
       });
 
+      socket.on("calling-busy", (msg) => {
+        this.io.emit(msg.data._fromUserId, msg);
+      });
+
       socket.on("reject", (msg) => {
         this.io.emit(msg.data._fromUserId, msg);
       });
