@@ -1,7 +1,9 @@
 import { pbkdf2Sync, randomBytes } from "crypto";
 import { Request, Response } from "express";
+import { unlink } from "fs";
 import Jwt from "jsonwebtoken";
 import { NativeError } from "mongoose";
+import path from "path";
 import { uid } from "uid";
 import { iToken } from "../interfaces/tokenInterface";
 import UserRepository from "../repositorys/UserRepository";
@@ -17,6 +19,9 @@ interface iUserController {
   checkAlreadyKey(req: Request, res: Response): Promise<Response>;
   reSendEmail(req: Request, res: Response): Promise<Response>;
   searchUser(req: Request, res: Response): Promise<Response>;
+  getMyProfile(req: Request, res: Response): Promise<Response>;
+  editMyProfile(req: Request, res: Response): Promise<Response>;
+  uploadPhotoProfile(req: Request, res: Response): Promise<Response>;
 }
 
 interface iQuerySearch {
@@ -79,7 +84,6 @@ class UserController implements iUserController {
       }
       const data = await UserRepository.create(req.body, aCode);
       const urlHref: string = `${process.env.FRONT_URL}/auth/verification/me/${data.username}?code=${aCode}`;
-      console.log(urlHref);
       EmailService.sender({
         to: `${data.email}`,
         subject: "otp verification",
@@ -155,10 +159,6 @@ class UserController implements iUserController {
       if (data === null) {
         return res.status(404).send({ status: 404, msg: "Failed request link reset password.!", err: "Email not found, try again.!", data: null });
       }
-      console.log(
-        "url reset-password",
-        `${process.env.FRONT_URL}/auth/reset-password?username=${data.username}&key=${data.confidential.linkResetPassword}`
-      );
 
       //kirim email
       EmailService.sender({
@@ -225,11 +225,11 @@ class UserController implements iUserController {
    */
   public async changePassword(req: Request, res: Response): Promise<Response> {
     const jwtPayload = res.locals as iToken;
-    console.log(`getin auth middleware ${jwtPayload.username}`);
     const { lPassword, nPassword, cPassword } = req.body;
-    const { _id } = req.params;
+    const _id = jwtPayload.id;
     try {
       const user = await UserRepository.findOne<{ _id: any }>({ _id: _id });
+
       if (user === null) {
         return res.status(404).send({ status: 404, msg: "Failed change password.!", err: "user not found.!", data: null });
       }
@@ -241,12 +241,15 @@ class UserController implements iUserController {
       }
 
       const setPassword = this.setPassword(nPassword);
-      const data = await UserRepository.updateOne<{ id: any }, { "confidential.password": string; "confidential.salt": string }>(
-        { id: req.params._id },
+      const data = await UserRepository.findOneAndUpdate<{ _id: any }, { "confidential.password": string; "confidential.salt": string }>(
+        { _id: user._id },
         { "confidential.password": setPassword.password, "confidential.salt": setPassword.salt }
       );
 
-      return res.status(200).send({ status: 200, msg: "Success change password.!", err: null, data: data });
+      if (data !== null) {
+        return res.status(200).send({ status: 200, msg: "Success change password.!", err: null, data: data });
+      }
+      return res.status(404).send({ status: 404, msg: "Failed change password.!", err: "user not found.!", data: null });
     } catch (error) {
       const err = error as NativeError;
       return res.status(500).send({ status: 500, msg: "Failed change password.!", err: "Something went wrong.!", data: null });
@@ -291,7 +294,6 @@ class UserController implements iUserController {
       }
 
       const urlResetPassword: string = `${process.env.FRONT_URL}/auth/reset-password?username=${data.username}&key=${data.confidential.linkResetPassword}`;
-      console.log("url reset password", urlResetPassword);
       EmailService.sender({
         to: `${data.email}`,
         subject: "otp forget-password",
@@ -305,7 +307,7 @@ class UserController implements iUserController {
 
     if (ctx === "activation") {
       const urlActivation: string = `${process.env.FRONT_URL}/auth/verification/me/${data.username}?code=${data.confidential.activationCode}`;
-      console.log(urlActivation);
+
       if (data.confidential.isActivated) {
         return res.status(200).send({ status: 200, msg: "Success account has been activated.!", err: null, data: data });
       }
@@ -327,9 +329,6 @@ class UserController implements iUserController {
    * search user
    */
   public async searchUser(req: Request, res: Response): Promise<Response> {
-    // console.log("res locals", res.locals);
-    console.log(res.locals.id);
-
     const data = await UserRepository.findAllQuery<iQuerySearch>({
       $and: [
         { _id: { $ne: res.locals.id } },
@@ -337,6 +336,70 @@ class UserController implements iUserController {
       ],
     });
     return res.status(200).send({ status: 200, msg: "Sucess search users.!", err: null, data: data });
+  }
+
+  /**
+   * getMyProfile */
+  public async getMyProfile(req: Request, res: Response): Promise<Response> {
+    try {
+      const _id = res.locals.id;
+      const data = await UserRepository.findOne({ _id: _id });
+      if (data !== null) {
+        return res.status(200).send({ status: 200, msg: "Sucess get my profile.!", err: null, data: data });
+      }
+      return res.status(400).send({ status: 400, msg: "Sucess data not found.!", err: null, data: null });
+    } catch (error) {
+      return res.status(500).send({ status: 500, msg: "Failed.!", err: "Something went wrong.!", data: null });
+    }
+  }
+
+  /**
+   * EditMyProfile
+   */
+  public async editMyProfile(req: Request, res: Response): Promise<Response> {
+    const { username, fullName, country, countryCode } = req.body;
+    try {
+      const _id = res.locals.id;
+      const data = await UserRepository.findOneAndUpdate<{ _id: any }, { username: string; fullName: string; country: string; countryCode: string }>(
+        { _id: _id },
+        { username: username, fullName: fullName, country: country, countryCode: countryCode }
+      );
+      if (data === null) {
+        return res.status(200).send({ status: 200, msg: "Failed edit profile.!", err: "user not found", data: data });
+      }
+      return res.status(200).send({ status: 200, msg: "Sucess edit profile.!", err: null, data: data });
+    } catch (error) {
+      const err = error as NativeError;
+      if (err.message.includes("username_1")) {
+        return res.status(400).send({ status: 400, msg: "Failed register validation.!", err: "Username already exist.!", data: null });
+      }
+      return res.status(500).send({ status: 500, msg: "Failed.!", err: "Something went wrong.!", data: null });
+    }
+  }
+
+  /**
+   * name
+   */
+  public async uploadPhotoProfile(req: Request, res: Response): Promise<Response> {
+    const _id = res.locals.id;
+    const filename = req.file?.filename;
+    try {
+      const data = await UserRepository.findOne<{ _id: any }>({ _id: _id });
+      if (data === null) {
+        return res.status(404).send({ status: 404, msg: "Success.!", err: "user not found", data: data });
+      }
+      unlink(path.join(__dirname, `../../public/uploads/${data.photoProfile}`), (r) => {});
+      if (filename) {
+        const upload = await UserRepository.findOneAndUpdate<{ _id: any }, { photoProfile: string }>({ _id: _id }, { photoProfile: filename });
+        if (upload === null) {
+          return res.status(404).send({ status: 404, msg: "Success.!", err: "user not found", data: data });
+        }
+        return res.status(200).send({ status: 200, msg: "Sucess upload photo profile.!", err: null, data: upload });
+      }
+      return res.status(404).send({ status: 404, msg: "Success.!", err: "user not found", data: data });
+    } catch (err: any) {
+      return res.status(500).send({ status: 500, msg: "Failed.!", err: "Something went wrong.!", data: null });
+    }
   }
 }
 

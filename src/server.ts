@@ -5,6 +5,7 @@ import { config as dotenv } from "dotenv";
 import express, { Application } from "express";
 import { createServer } from "http";
 import mongoose from "mongoose";
+import path from "path";
 import { Server } from "socket.io";
 import mainRoute from "./routes";
 import countryInitData from "./services/countryInitData";
@@ -27,7 +28,7 @@ class App {
     this.package();
     this.routes();
     this.broadcast();
-    this.initTranslate();
+    // this.initTranslate();
   }
 
   protected package(): void {
@@ -37,6 +38,7 @@ class App {
 
   protected routes(): void {
     this.app.use(cors());
+    this.app.use("/img", express.static(path.join(__dirname, "../public/uploads/")));
     this.app.use("/api/v1", mainRoute);
     // this.app.post("/ws", new ChatController(this.io).sendMessage.bind(new ChatController(this.io)));
   }

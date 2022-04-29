@@ -1,12 +1,12 @@
 ###
 //login
-POST http://localhost:4000/api/v1/user/auth/login
+POST http://localhost:4001/api/v1/user/auth/login
 Accept: application/json
 Content-Type: application/json
 
   {
     "usernameOrEmail":"abdulgopur2306@gmail.com",
-    "password":"password"
+    "password":"q1w2e3r4"
   }
 
 ###
@@ -60,7 +60,7 @@ Content-Type: application/json
 
 ###
 //activation
-GET http://localhost:4000/api/v1/user/activation/apuystereo/0b1628
+GET http://localhost:4001/api/v1/user/activation/apuystereo/0b1628
 Accept: application/json
 Content-Type: application/json
 
@@ -113,12 +113,13 @@ Content-Type: application/json
 
 ###
 //change-password
-PUT http://localhost:4000/api/v1/user/change-password
+PUT http://localhost:4001/api/v1/user/change-password
 Accept: application/json
 Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYxZDFjYTQ2ZmE3YTE2MWNjMDk4NjVkOCIsInVzZXJuYW1lIjoiYXB1eXN0ZXJlbyIsImlhdCI6MTY1MTE2MjQxNCwiZXhwIjoxNjUxNzY3MjE0fQ.kyJo2xDz24VAMe9Z1pxp4DPHrcyEXu3P1dK4UUoYhTF4krcCTvf-Grdyk-8xeG0I
 
   {
-    "lPassword":"new-passwords",
+    "lPassword":"password",
     "nPassword":"password717",
     "cPassword":"password717"
   }
@@ -203,3 +204,26 @@ GET http://localhost:4000/api/v1/chat/list-chat
 Accept: application/json
 Content-Type: application/json
 Authorization: Bearer eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYxZDFjYTQ2ZmE3YTE2MWNjMDk4NjVkOCIsInVzZXJuYW1lIjoiYXB1eXN0ZXJlbyIsImlhdCI6MTY0MTIzNDMyNSwiZXhwIjoxNjQxMzIwNzI1fQ.clzG04fGITQwSVImP3UEKIC3Kdc89DjHKZ7-UvC0NVnhAW_yAfiD9U2upjQKx01q
+
+###
+//get listChat
+###
+GET http://localhost:4001/api/v1/user/got-profile
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYxZDFjYTQ2ZmE3YTE2MWNjMDk4NjVkOCIsInVzZXJuYW1lIjoiYXB1eXN0ZXJlbyIsImlhdCI6MTY1MTE2MjQxNCwiZXhwIjoxNjUxNzY3MjE0fQ.kyJo2xDz24VAMe9Z1pxp4DPHrcyEXu3P1dK4UUoYhTF4krcCTvf-Grdyk-8xeG0I
+
+###
+//update profile
+###
+PUT http://localhost:4001/api/v1/user/update-profile
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYxZDFjYTQ2ZmE3YTE2MWNjMDk4NjVkOCIsInVzZXJuYW1lIjoiYXB1eXN0ZXJlbyIsImlhdCI6MTY1MTE2MjQxNCwiZXhwIjoxNjUxNzY3MjE0fQ.kyJo2xDz24VAMe9Z1pxp4DPHrcyEXu3P1dK4UUoYhTF4krcCTvf-Grdyk-8xeG0I
+
+  {
+    "username":"apuystereo",
+    "fullName":"Abdul Gopur",
+    "country":"indoneisa",
+    "countryCode":"id"
+  }

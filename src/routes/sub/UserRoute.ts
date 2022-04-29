@@ -1,4 +1,6 @@
 import { body, query } from "express-validator";
+import multer, { Multer } from "multer";
+import { uid } from "uid";
 import UserController from "../../controllers/UserController";
 import AuthMiddleware from "../../middlewares/AuthMiddleware";
 import BaseRoute from "../BaseRoutes";
@@ -71,6 +73,47 @@ class UserRoute extends BaseRoute {
       "/search",
       [AuthMiddleware.authorize.bind(AuthMiddleware), query("keyword").notEmpty().isString(), this.preRequest],
       UserController.searchUser
+    );
+    this.router.get("/got-profile", [AuthMiddleware.authorize.bind(AuthMiddleware), this.preRequest], UserController.getMyProfile);
+    this.router.put(
+      "/update-profile",
+      [
+        AuthMiddleware.authorize.bind(AuthMiddleware),
+        body("username").notEmpty().isString().isLength({ min: 6, max: 30 }),
+        body("fullName").notEmpty().isString().isLength({ min: 1, max: 30 }),
+        body("country").notEmpty().withMessage("country is required.!").isString().withMessage("country is string.!"),
+        body("countryCode").notEmpty().withMessage("countryCode is required.!").isString().withMessage("countryCode is string.!"),
+        this.preRequest,
+      ],
+      UserController.editMyProfile
+    );
+
+    // const upload = multer({ dest: "public/uploads/" });
+    const storage = multer.diskStorage({
+      destination: function (req, file, cb) {
+        cb(null, "public/uploads");
+      },
+
+      filename: function (req, file, cb) {
+        cb(null, `${uid(16)}${new Date().getTime()}_${file.originalname.replace(/\s/g, "_")}`);
+      },
+    });
+
+    const upload: Multer = multer({
+      limits: { fieldSize: 2 * 1024 * 1024 },
+      storage: storage,
+      fileFilter: (req, file, cb) => {
+        if (file.mimetype == "image/png" || file.mimetype == "image/jpg" || file.mimetype == "image/jpeg" || file.mimetype == "image/JPG") {
+          cb(null, true);
+        } else {
+          cb(null, false);
+        }
+      },
+    });
+    this.router.put(
+      "/upload/me/photo-profile",
+      [AuthMiddleware.authorize.bind(AuthMiddleware), upload.single("file")],
+      UserController.uploadPhotoProfile
     );
   }
 }
