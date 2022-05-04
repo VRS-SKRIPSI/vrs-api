@@ -3,11 +3,11 @@ import { Server } from "socket.io";
 import chatRepository from "../repositorys/chatRepository";
 
 interface iChatController {
-  sendMessage(req: Request, res: Response): Promise<Response>;
   createRoom(req: Request, res: Response): Promise<Response>;
   sendMessage(req: Request, res: Response): Promise<Response>;
   getChat(req: Request, res: Response): Promise<Response>;
   getListChat(req: Request, res: Response): Promise<Response>;
+  getListChatById(req: Request, res: Response): Promise<Response>;
 }
 
 class ChatController implements iChatController {
@@ -62,6 +62,22 @@ class ChatController implements iChatController {
     try {
       const data = await chatRepository.getListChat(res.locals.id);
       return res.status(200).send({ status: 200, msg: "success get chat", err: null, data: data });
+    } catch (err) {
+      return res.status(500).send({ status: 500, msg: "Failed get chat.!", err: "something went wrong.!", data: null });
+    }
+  }
+
+  /**
+   * getListChat
+   */
+  public async getListChatById(req: Request, res: Response): Promise<Response> {
+    const _id: any = req.params._id;
+    try {
+      const data = await chatRepository.getListChatById(_id);
+      if (data !== null) {
+        return res.status(200).send({ status: 200, msg: "success get chat", err: null, data: data });
+      }
+      return res.status(404).send({ status: 404, msg: "Success get chat.!", err: "list chat not found" });
     } catch (err) {
       return res.status(500).send({ status: 500, msg: "Failed get chat.!", err: "something went wrong.!", data: null });
     }

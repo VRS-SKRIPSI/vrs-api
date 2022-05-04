@@ -30,29 +30,19 @@ export interface iSendChatResponse {
 
 interface iChatRepository {
   findListChat<T>(payload: T): Promise<iListChatTranscript | null>;
-  sendMessage(payloadMessage: iPayloadMessage): Promise<iSendChatResponse | null>;
+  sendMessage(payloadMessage: iSendChatResponse): Promise<iSendChatResponse | null>;
   createRoom(payloadSender: iSender): Promise<iListChatTranscript | null>;
   findCurrentChat(_listChatId: any, _limit: number, skip: number): Promise<any>;
   getListChat(_userId: Schema.Types.ObjectId): Promise<iListChatTranscript[]>;
+  getListChatById(_id: Schema.Types.ObjectId): Promise<iListChatTranscript | null>;
 }
 
 class chatRepository implements iChatRepository {
   private lsitChatSchema = listChatTranscripts;
   private chatSchema = chatTranscripts;
 
-  private async saveChat(payload: iPayloadMessage, _listMessageId: Schema.Types.ObjectId): Promise<iChatTranscript> {
-    const saveChat = await this.chatSchema.create({
-      _listChatTranscriptId: _listMessageId,
-      _sender: { _userId: payload._sender._id, sent: true },
-      _receiver: { _userId: payload._receiver._id, read: false },
-      body: {
-        fromLang: payload.body.fromLang,
-        fromChat: payload.body.fromChat,
-        targetLang: payload.body.targetLang,
-        targetChat: payload.body.targetChat,
-      },
-    });
-
+  private async saveChat(payload: iChatTranscript): Promise<iChatTranscript> {
+    const saveChat = await this.chatSchema.create(payload);
     return saveChat;
   }
 
@@ -61,28 +51,30 @@ class chatRepository implements iChatRepository {
   }
 
   public async createRoom(payloadSender: iSender): Promise<iListChatTranscript | null> {
-    const checkHistoryMessage = await this.findListChat<{ _userId: { $all: any[] } }>({
-      _userId: { $all: [payloadSender._sender._id, payloadSender._receiver._id] },
-    });
+    const checkHistoryMessage = await this.lsitChatSchema
+      .findOne({ _userId: { $all: [payloadSender._sender._id, payloadSender._receiver._id] } })
+      .populate({ path: "_userId", select: "_id username fullName photoProfile" })
+      .exec();
+
     if (checkHistoryMessage === null) {
-      return await this.lsitChatSchema.create({
+      const save = await this.lsitChatSchema.create({
         _userId: [payloadSender._receiver._id, payloadSender._sender._id],
       });
+      return await this.lsitChatSchema.findOne({ _id: save._id }).populate({ path: "_userId", select: "_id username fullName photoProfile" }).exec();
     }
 
     return checkHistoryMessage;
   }
 
-  public async sendMessage(payloadMessage: iPayloadMessage): Promise<iSendChatResponse | null> {
+  public async sendMessage(payloadMessage: iSendChatResponse): Promise<iSendChatResponse | null> {
     const listChat = await this.lsitChatSchema.findOneAndUpdate(
-      { _id: payloadMessage._listChatId },
-      { currentChat: payloadMessage.body.fromChat },
+      { _id: payloadMessage.credential._id },
+      { currentChat: payloadMessage.payload.body.fromChat },
       { new: true }
     );
-    console.log("list chat _id", listChat?._id);
 
     if (listChat !== null) {
-      const createChat = await this.saveChat(payloadMessage, listChat._id);
+      const createChat = await this.saveChat(payloadMessage.payload);
       const data: iSendChatResponse = {
         credential: listChat,
         payload: createChat,
@@ -95,8 +87,6 @@ class chatRepository implements iChatRepository {
   public async findCurrentChat(_listChatId: any, _limit: number, skip: number): Promise<any> {
     return await this.chatSchema
       .find({ _listChatTranscriptId: _listChatId })
-      .populate({ path: "_receiver._userId", select: "username" })
-      .populate({ path: "_sender._userId", select: "username" })
       .skip(skip >= 1 ? skip : 0)
       .limit(_limit)
       .sort({ createdAt: 1 });
@@ -107,6 +97,10 @@ class chatRepository implements iChatRepository {
       .find({ _userId: { $all: [_userId] } })
       .populate({ path: "_userId", select: "_id username fullName photoProfile" })
       .exec();
+  }
+
+  public async getListChatById(_id: Schema.Types.ObjectId): Promise<iListChatTranscript | null> {
+    return await this.lsitChatSchema.findOne({ _id: _id }).populate({ path: "_userId", select: "_id username fullName photoProfile" }).exec();
   }
 }
 

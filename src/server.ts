@@ -3,10 +3,13 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import { config as dotenv } from "dotenv";
 import express, { Application } from "express";
+
 import { createServer } from "http";
-import mongoose from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import path from "path";
-import { Server } from "socket.io";
+import { Server, Socket } from "socket.io";
+import chatRepository, { iSendChatResponse } from "./repositorys/chatRepository";
+import UserRepository from "./repositorys/UserRepository";
 import mainRoute from "./routes";
 import countryInitData from "./services/countryInitData";
 
@@ -43,9 +46,51 @@ class App {
     // this.app.post("/ws", new ChatController(this.io).sendMessage.bind(new ChatController(this.io)));
   }
 
+  private async Translate(payload: iSendChatResponse): Promise<void> {
+    const { fromChat, fromLang } = payload.payload.body;
+    let result = payload;
+    const chatId = new mongoose.Types.ObjectId();
+    Object.assign(result, { ...result, payload: { ...result.payload, _id: chatId } });
+    this.io.emit(`client-chat-${payload.payload._sender._userId}`, result); //send back to senders
+    this.io.emit(`client-chat-${payload.payload._receiver._userId}`, result); //send to receiver
+    const gotLangCodeTarget = await UserRepository.findOne<{ _id: Schema.Types.ObjectId }>({ _id: payload.payload._receiver._userId });
+    if (gotLangCodeTarget !== null) {
+      await translate(`${fromChat}`, { from: `${fromLang}`, to: `${gotLangCodeTarget.countryCode}` })
+        .then(async (r) => {
+          Object.assign(result, {
+            ...result,
+            payload: { ...result.payload, body: { ...result.payload.body, targetLang: `${gotLangCodeTarget.countryCode}`, targetChat: r.text } },
+          });
+          console.log(`${fromChat}#${fromLang} -> ${r.text}#${gotLangCodeTarget?.countryCode}`);
+          console.log("replace payload", result);
+          this.io.emit(`client-chat-${payload.payload._sender._userId}`, result); //send back to senders
+          this.io.emit(`client-chat-${payload.payload._receiver._userId}`, result); //send to receiver
+          await chatRepository.sendMessage(result);
+        })
+        .catch((err) => {
+          console.log("error translate chat", err);
+          Object.assign(result, {
+            ...result,
+            payload: { ...result.payload, body: { ...result.payload.body, targetChat: "oopps... failed to translate message!" } },
+          });
+          this.io.emit(`client-chat-${payload.payload._sender._userId}`, result); //send back to senders
+          this.io.emit(`client-chat-${payload.payload._receiver._userId}`, result); //send to receiver
+        });
+    }
+  }
+
+  private chat(socket: Socket): void {
+    socket.on("server-post-chat", (msg: iSendChatResponse) => {
+      console.log("post chat", msg);
+      this.Translate(msg);
+    });
+  }
+
   protected broadcast(): void {
     this.io.on("connection", async (socket) => {
       console.log("form app", socket.id);
+      this.chat(socket);
+
       socket.on("calling", (msg) => {
         this.io.emit(msg.data._toUserId, msg);
       });
@@ -124,16 +169,6 @@ class App {
         console.log(`${reason} : ${socket.id}`);
       });
     });
-  }
-
-  private async initTranslate(): Promise<void> {
-    await translate(`ketika semua terasa begitu berat!`, { from: "id", to: "en" })
-      .then((r) => {
-        console.log("initial translate.text", r.text);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
   }
 }
 

@@ -5,8 +5,8 @@ import { query } from "express-validator";
 
 class ChatRoutes extends BaseRoute {
   routes(): void {
-    this.router.post("/send", new ChatController().sendMessage);
-    this.router.post("/new-chat", new ChatController().createRoom);
+    this.router.post("/send", [AuthMiddleware.authorize.bind(AuthMiddleware)], new ChatController().sendMessage); //masih tidak dipake
+    this.router.post("/new-chat", [AuthMiddleware.authorize.bind(AuthMiddleware)], new ChatController().createRoom);
     this.router.get(
       "/current-chat",
       [
@@ -19,6 +19,7 @@ class ChatRoutes extends BaseRoute {
       new ChatController().getChat
     );
     this.router.get("/list-chat", [AuthMiddleware.authorize.bind(AuthMiddleware)], new ChatController().getListChat);
+    this.router.get("/list-chat/one/:_id", [AuthMiddleware.authorize.bind(AuthMiddleware)], new ChatController().getListChatById);
   }
 }
 
