@@ -89,7 +89,7 @@ class chatRepository implements iChatRepository {
       .find({ _listChatTranscriptId: _listChatId })
       .skip(skip >= 1 ? skip : 0)
       .limit(_limit)
-      .sort({ createdAt: 1 });
+      .sort({ createdAt: -1 });
   }
 
   async getListChat(_userId: Schema.Types.ObjectId): Promise<iListChatTranscript[]> {

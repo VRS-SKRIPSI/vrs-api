@@ -3,7 +3,6 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import { config as dotenv } from "dotenv";
 import express, { Application } from "express";
-
 import { createServer } from "http";
 import mongoose, { Schema } from "mongoose";
 import path from "path";
@@ -65,7 +64,19 @@ class App {
           console.log("replace payload", result);
           this.io.emit(`client-chat-${payload.payload._sender._userId}`, result); //send back to senders
           this.io.emit(`client-chat-${payload.payload._receiver._userId}`, result); //send to receiver
-          await chatRepository.sendMessage(result);
+          Object.assign(result, {
+            ...result,
+            payload: {
+              ...result.payload,
+              _sender: { ...result.payload._sender, send: true },
+              body: { ...result.payload.body, targetLang: `${gotLangCodeTarget.countryCode}`, targetChat: r.text },
+            },
+          });
+          const data = await chatRepository.sendMessage(result);
+          if (data !== null) {
+            this.io.emit(`client-chat-${payload.payload._sender._userId}`, data); //send back to senders
+            this.io.emit(`client-chat-${payload.payload._receiver._userId}`, data); //send to receiver
+          }
         })
         .catch((err) => {
           console.log("error translate chat", err);

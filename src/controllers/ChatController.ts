@@ -45,9 +45,9 @@ class ChatController implements iChatController {
    */
   public async getChat(req: Request, res: Response): Promise<Response> {
     try {
-      const { _page, _limit, _listchatId }: any = req.query;
+      const { _skip, _limit, _listchatId }: any = req.query;
       const limit = parseInt(_limit);
-      const skip: number = (parseInt(_page) - 1) * parseInt(_limit);
+      const skip: number = parseInt(_skip);
       const chat = await chatRepository.findCurrentChat(`${_listchatId}`, limit, skip);
       return res.status(200).send({ status: 200, msg: "success get chat", err: null, data: chat });
     } catch (err) {

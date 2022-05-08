@@ -11,7 +11,7 @@ class ChatRoutes extends BaseRoute {
       "/current-chat",
       [
         AuthMiddleware.authorize.bind(AuthMiddleware),
-        query("_page").notEmpty().isInt(),
+        query("_skip").notEmpty().isInt(),
         query("_limit").notEmpty().isInt(),
         query("_listchatId").notEmpty().isString(),
         this.preRequest,

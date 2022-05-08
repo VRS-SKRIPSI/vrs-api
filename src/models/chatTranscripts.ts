@@ -4,7 +4,7 @@ export interface iChatTranscript extends Document {
   _listChatTranscriptId: Schema.Types.ObjectId;
   _sender: {
     _userId: Schema.Types.ObjectId;
-    sent: Boolean;
+    send: Boolean;
   };
   _receiver: {
     _userId: Schema.Types.ObjectId;
