@@ -1,7 +1,7 @@
 import BaseRoute from "../BaseRoutes";
 import ChatController from "../../controllers/chatController";
 import AuthMiddleware from "../../middlewares/AuthMiddleware";
-import { query } from "express-validator";
+import { param, query } from "express-validator";
 
 class ChatRoutes extends BaseRoute {
   routes(): void {
@@ -20,6 +20,11 @@ class ChatRoutes extends BaseRoute {
     );
     this.router.get("/list-chat", [AuthMiddleware.authorize.bind(AuthMiddleware)], new ChatController().getListChat);
     this.router.get("/list-chat/one/:_id", [AuthMiddleware.authorize.bind(AuthMiddleware)], new ChatController().getListChatById);
+    this.router.get(
+      "/list-chat/notif/:_userId",
+      [param("_userId").notEmpty().isString(), AuthMiddleware.authorize.bind(AuthMiddleware)],
+      new ChatController().getListNotifChat
+    );
   }
 }
 

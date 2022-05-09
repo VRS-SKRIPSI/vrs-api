@@ -7,6 +7,7 @@ import { createServer } from "http";
 import mongoose, { Schema } from "mongoose";
 import path from "path";
 import { Server, Socket } from "socket.io";
+import notifChat, { iNotifChat } from "./models/notfChat";
 import chatRepository, { iSendChatResponse } from "./repositorys/chatRepository";
 import UserRepository from "./repositorys/UserRepository";
 import mainRoute from "./routes";
@@ -16,6 +17,7 @@ class App {
   public app: Application;
   public server: any;
   public io: Server;
+  public listUserIsOnline: string[] = [];
 
   constructor() {
     console.clear();
@@ -50,6 +52,14 @@ class App {
     let result = payload;
     const chatId = new mongoose.Types.ObjectId();
     Object.assign(result, { ...result, payload: { ...result.payload, _id: chatId } });
+    //create notification
+    await notifChat.create({ _listChatTranscriptId: `${payload.credential._id}`, _userId: `${payload.payload._receiver._userId}` });
+    this.io.emit(`client-notif-chat-${payload.payload._receiver._userId}`, {
+      _userId: `${payload.payload._receiver._userId}`,
+      _listChatTranscriptId: `${payload.credential._id}`,
+    });
+
+    //send chat to _sender and receiver
     this.io.emit(`client-chat-${payload.payload._sender._userId}`, result); //send back to senders
     this.io.emit(`client-chat-${payload.payload._receiver._userId}`, result); //send to receiver
     const gotLangCodeTarget = await UserRepository.findOne<{ _id: Schema.Types.ObjectId }>({ _id: payload.payload._receiver._userId });
@@ -92,15 +102,34 @@ class App {
 
   private chat(socket: Socket): void {
     socket.on("server-post-chat", (msg: iSendChatResponse) => {
-      console.log("post chat", msg);
       this.Translate(msg);
+    });
+
+    socket.on("server-read-chat", async (msg: { _listChatTranscriptId: string; _userId: string }) => {
+      const _listChatId: any = `${msg._listChatTranscriptId}`;
+      const userId: any = `${msg._userId}`;
+      await notifChat.deleteMany({ _userId: userId, _listChatTranscriptId: _listChatId }).exec();
     });
   }
 
   protected broadcast(): void {
+    this.io.use((socket, next) => {
+      const username = `${socket.handshake.query.username}`;
+      if (username) {
+        this.listUserIsOnline.push(username);
+        this.io.emit("got-user-is-online", username);
+        next();
+      } else {
+        next(new Error("username required"));
+      }
+    });
+
     this.io.on("connection", async (socket) => {
       console.log("form app", socket.id);
       this.chat(socket);
+      socket.on("req-list-user-is-online", (userId: string) => {
+        this.io.to(userId).emit("got-list-user-is-online", this.listUserIsOnline);
+      });
 
       socket.on("calling", (msg) => {
         this.io.emit(msg.data._toUserId, msg);
@@ -177,7 +206,12 @@ class App {
 
       //disconnect or offline user
       socket.on("disconnect", (reason) => {
+        const username = `${socket.handshake.query.username}`;
         console.log(`${reason} : ${socket.id}`);
+        const index = this.listUserIsOnline.findIndex((f) => f === username);
+        this.listUserIsOnline.splice(index, 1);
+        console.log(this.listUserIsOnline);
+        this.io.emit("got-user-is-leave", username);
       });
     });
   }

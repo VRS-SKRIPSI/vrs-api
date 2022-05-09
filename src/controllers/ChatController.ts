@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
+import { Types } from "mongoose";
 import { Server } from "socket.io";
+import notifChat, { iNotifChat } from "../models/notfChat";
 import chatRepository from "../repositorys/chatRepository";
 
 interface iChatController {
@@ -8,6 +10,7 @@ interface iChatController {
   getChat(req: Request, res: Response): Promise<Response>;
   getListChat(req: Request, res: Response): Promise<Response>;
   getListChatById(req: Request, res: Response): Promise<Response>;
+  getListNotifChat(req: Request, res: Response): Promise<Response>;
 }
 
 class ChatController implements iChatController {
@@ -34,8 +37,6 @@ class ChatController implements iChatController {
       }
       return res.status(200).send({ status: 200, msg: "Success send message.!", err: null, data: data });
     } catch (err) {
-      console.log(err);
-
       return res.status(500).send({ status: 500, msg: "Failed, something went wrong.!", err: null, data: null });
     }
   }
@@ -80,6 +81,20 @@ class ChatController implements iChatController {
       return res.status(404).send({ status: 404, msg: "Success get chat.!", err: "list chat not found" });
     } catch (err) {
       return res.status(500).send({ status: 500, msg: "Failed get chat.!", err: "something went wrong.!", data: null });
+    }
+  }
+
+  /**
+   * get notification list chat
+   */
+  public async getListNotifChat(req: Request, res: Response): Promise<Response> {
+    const { _userId } = req.params;
+    const uid: any = _userId;
+    try {
+      const data = await notifChat.find({ _userId: uid }).exec();
+      return res.status(200).send({ status: 200, msg: "Success get notf chat.!", err: "list chat not found", data: data });
+    } catch (err) {
+      return res.status(500).send({ status: 500, msg: "Failed get notif chat.!", err: "something went wrong.!", data: null });
     }
   }
 }
