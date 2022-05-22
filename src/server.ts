@@ -158,6 +158,10 @@ class App {
         console.log(socket.rooms);
       });
 
+      socket.on("server-send-muted", (_roomId: string, isMuted: boolean) => {
+        socket.to(_roomId).emit("got-translate-status", isMuted);
+      });
+
       socket.on("transcript", async (roomId, msg) => {
         if (msg.msg.length >= 1) {
           return await translate(msg.msg, { from: msg.fromLang, to: msg.toLang })
