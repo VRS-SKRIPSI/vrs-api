@@ -151,28 +151,31 @@ class App {
         this.io.emit(msg.data._fromUserId, msg);
       });
 
-      socket.on("join-room", (roomId, _userId) => {
+      socket.on("join-room", (roomId: string, _userId: string) => {
         console.log("roomId", `${roomId} ++ userId ${_userId}`);
         socket.join(roomId);
         socket.to(roomId).emit("user-connected", _userId);
         console.log(socket.rooms);
       });
 
-      socket.on("server-send-muted", (_roomId: string, isMuted: boolean) => {
-        socket.to(_roomId).emit("got-translate-status", isMuted);
+      socket.on("server-send-muted", (_userId: string, isMuted: boolean) => {
+        this.io.emit(`${_userId}-client-on-muted`, isMuted);
       });
 
       socket.on("transcript", async (roomId, msg) => {
-        if (msg.msg.length >= 1) {
-          return await translate(msg.msg, { from: msg.fromLang, to: msg.toLang })
+        if (msg.msgFromLang.length >= 1) {
+          return await translate(msg.msgFromLang, { from: msg.fromLang, to: msg.toLang })
             .then((r) => {
               console.log("msg dan roomid", msg);
+              const sendTranscript = {
+                username: msg.username,
+                toLang: msg.toLang,
+                fromLang: msg.fromLang,
+                msgFromLang: msg.msgFromLang,
+                msgToLang: r.text,
+              };
               socket.to(roomId).emit("transcript-callback", r.text);
-              // this.io.emit(msg.receiverId, JSON.stringify(r.text));
-              console.log("---------------------------------------------------------------");
-              console.log(`from ${msg.fromLang}: ${msg.msg}`);
-              console.log(`to ${msg.toLang}: ${JSON.stringify(r.text)}`);
-              console.log("---------------------------------------------------------------");
+              this.io.emit(`${msg.callId}-got-call-transcript`, sendTranscript);
             })
             .catch((err) => {
               console.log("translate", err);
