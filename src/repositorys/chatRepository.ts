@@ -46,7 +46,7 @@ class chatRepository implements iChatRepository {
     return saveChat;
   }
 
-  public async findListChat<T>(payload: T): Promise<iListChatTranscript | null> {
+  public async findListChat<T>(payload: T | any): Promise<iListChatTranscript | null> {
     return await this.lsitChatSchema.findOne(payload).exec();
   }
 

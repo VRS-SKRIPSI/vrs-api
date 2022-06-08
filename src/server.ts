@@ -44,6 +44,9 @@ class App {
     this.app.use(cors());
     this.app.use("/img", express.static(path.join(__dirname, "../public/uploads/")));
     this.app.use("/api/v1", mainRoute);
+    this.app.use("/status-server", (req, res) => {
+      return res.status(200).send({ status: "200", msg: "success", err: null, data: [] });
+    });
     // this.app.post("/ws", new ChatController(this.io).sendMessage.bind(new ChatController(this.io)));
   }
 
@@ -160,6 +163,9 @@ class App {
 
       socket.on("server-send-muted", (_userId: string, isMuted: boolean) => {
         this.io.emit(`${_userId}-client-on-muted`, isMuted);
+      });
+      socket.on("server-send-video-status", (_userId: string, isActive: boolean) => {
+        this.io.emit(`${_userId}-client-got-video-status`, isActive);
       });
 
       socket.on("transcript", async (roomId, msg) => {

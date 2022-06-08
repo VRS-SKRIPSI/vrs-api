@@ -13,22 +13,22 @@ interface iCreate {
 }
 
 interface iUserRepository {
-  findOne<T>(query: T): Promise<iUser | null>;
+  findOne<T>(query: T | any): Promise<iUser | null>;
   findUsernameOrEmail(param: string): Promise<iUser | null>;
   create(body: iCreate, activationCode: string): Promise<iUser>;
   findAll(skip: number, limit: number): Promise<iUser[]>;
-  findAllQuery<T>(query: T): Promise<iUser[]>;
-  checkDupKey<T>(query: T, select: string): Promise<iUser | null>;
-  updateOne<uid, T>(_id: uid, body: T): Promise<iUser>;
-  findOneAndUpdate<_id, T>(_id: _id, body: T): Promise<iUser | null>;
+  findAllQuery<T>(query: T | any): Promise<iUser[]>;
+  checkDupKey<T>(query: T | any, select: string): Promise<iUser | null>;
+  updateOne<uid, T>(_id: uid | any, body: T | any): Promise<iUser>;
+  findOneAndUpdate<_id, T>(_id: _id | any, body: T | any): Promise<iUser | null>;
 }
 
 class UserRepository implements iUserRepository {
-  async findAllQuery<T>(query: T): Promise<iUser[]> {
+  async findAllQuery<T>(query: T | any): Promise<iUser[]> {
     return users.find(query).exec();
   }
 
-  async findOne<T>(query: T): Promise<iUser | null> {
+  async findOne<T>(query: T | any): Promise<iUser | null> {
     return await users.findOne(query).exec();
   }
 
@@ -59,15 +59,15 @@ class UserRepository implements iUserRepository {
     return result;
   }
 
-  async checkDupKey<T>(query: T, select: string): Promise<iUser | null> {
+  async checkDupKey<T>(query: T | any, select: string): Promise<iUser | null> {
     return await users.findOne(query).select(select).exec();
   }
 
-  async updateOne<uid, T>(_id: uid, body: T): Promise<iUser> {
+  async updateOne<uid, T>(_id: uid | any, body: T | any): Promise<iUser> {
     return await users.updateOne(_id, body, { new: true }).exec();
   }
 
-  async findOneAndUpdate<_id, T>(_id: _id, body: T): Promise<iUser | null> {
+  async findOneAndUpdate<_id, T>(_id: _id | any, body: T | any): Promise<iUser | null> {
     return await users.findOneAndUpdate(_id, body, { new: true }).exec();
   }
 }
