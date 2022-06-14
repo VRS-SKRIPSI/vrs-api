@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "nodemon src/server.ts",
     "build": "rimraf dist && tsc && npm run copy-files",
-    "copy-files": "copyfiles -u 1 src/public/uploads/*.jpeg /dist",
+    "copy-files": "copyfiles -u 1 public/**/*.jpeg dist",
     "start": "node dist/src/server.js",
     "peer": "peerjs --port 9001 --key peerjs --path /myapp"
   },

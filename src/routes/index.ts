@@ -1,4 +1,4 @@
-import countryController from "../controllers/countryController";
+import countryController from "./../controllers/CountryController";
 import BaseRoute from "./BaseRoutes";
 import ChatRoutes from "./sub/ChatRoutes";
 import UserRoute from "./sub/UserRoute";

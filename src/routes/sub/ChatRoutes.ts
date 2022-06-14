@@ -1,6 +1,6 @@
-import BaseRoute from "../BaseRoutes";
-import ChatController from "../../controllers/chatController";
-import AuthMiddleware from "../../middlewares/AuthMiddleware";
+import BaseRoute from "./../BaseRoutes";
+import ChatController from "./../../controllers/ChatController";
+import AuthMiddleware from "./../../middlewares/AuthMiddleware";
 import { param, query } from "express-validator";
 
 class ChatRoutes extends BaseRoute {
