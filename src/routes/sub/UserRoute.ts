@@ -90,11 +90,11 @@ class UserRoute extends BaseRoute {
 
     // const upload = multer({ dest: "public/uploads/" });
     const storage = multer.diskStorage({
-      destination: function (req, file, cb) {
+      destination: function (req: any, file: any, cb: any) {
         cb(null, "dist/public/uploads");
       },
 
-      filename: function (req, file, cb) {
+      filename: function (req: any, file: any, cb: any) {
         cb(null, `${uid(16)}${new Date().getTime()}_${file.originalname.replace(/\s/g, "_")}`);
       },
     });
@@ -102,7 +102,7 @@ class UserRoute extends BaseRoute {
     const upload: Multer = multer({
       limits: { fieldSize: 2 * 1024 * 1024 },
       storage: storage,
-      fileFilter: (req, file, cb) => {
+      fileFilter: (req: any, file: any, cb: any) => {
         if (file.mimetype == "image/png" || file.mimetype == "image/jpg" || file.mimetype == "image/jpeg" || file.mimetype == "image/JPG") {
           cb(null, true);
         } else {
@@ -115,6 +115,8 @@ class UserRoute extends BaseRoute {
       [AuthMiddleware.authorize.bind(AuthMiddleware), upload.single("file")],
       UserController.uploadPhotoProfile
     );
+
+    this.router.get("/validate-token", [AuthMiddleware.authorize.bind(AuthMiddleware)], UserController.validateToken);
   }
 }
 

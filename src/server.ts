@@ -188,6 +188,12 @@ class App {
             });
         }
       });
+
+      socket.on("server-me-is-talking", async (_rId, msg) => {
+        console.log(`GOT user is talking ${_rId} stts :${msg}`);
+        socket.to(_rId).emit("client-is-talking", msg);
+      });
+
       socket.on("call-disconnected", (roomId) => {
         socket.leave(roomId);
         socket.to(roomId).emit("user-disconnected", socket.id);
@@ -231,6 +237,7 @@ class App {
 }
 
 const app = new App().server;
+// const mongoCon: string = `mongodb://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGODB_DATABASE}?authSource=admin`;
 const mongoCon: string = `mongodb://${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGODB_DATABASE}?authSource=admin`;
 
 mongoose

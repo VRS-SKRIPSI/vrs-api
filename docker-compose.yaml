@@ -1,0 +1,40 @@
+version: '3'
+services:
+  #api container
+  node:
+    restart: always
+    build: .
+    ports:
+      - 3001:3000
+    environment:
+      - name=value
+      - NODE_ENV=development
+      - PORT=3000
+      - MONGODB_HOST=mongo
+      - MONGODB_PORT=27017
+      - MONGODB_USER=
+      - MONGODB_PASSWORD=
+      - MONGODB_DATABASE=qyubit
+      - SIGNATURE=adfd12d4aa8922f97034587133751dc3d7a603381572143a0cb846ea3441ef050ef034ac090b15844d16
+    volumes:
+      - ./:/code
+  #mongodb container
+  mongo:
+    image: mongo
+    restart: always
+    ports:
+      - 27017:27017
+    volumes:
+      - mongodb:/data/db
+  #peerjs
+  peerjs:
+    image: peerjs/peerjs-server:latest
+    ports:
+      - 9000:9000
+    volumes:
+      - peerjs:/data/peerjs
+
+#volumes
+volumes:
+  mongodb:
+  peerjs:

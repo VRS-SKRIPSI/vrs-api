@@ -200,7 +200,7 @@ Authorization: Bearer eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYxZDFjYTQ2Z
 ###
 //get listChat
 ###
-GET http://localhost:4000/api/v1/chat/list-chat
+GET http://localhost:4001/api/v1/chat/list-chat
 Accept: application/json
 Content-Type: application/json
 Authorization: Bearer eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYxZDFjYTQ2ZmE3YTE2MWNjMDk4NjVkOCIsInVzZXJuYW1lIjoiYXB1eXN0ZXJlbyIsImlhdCI6MTY0MTIzNDMyNSwiZXhwIjoxNjQxMzIwNzI1fQ.clzG04fGITQwSVImP3UEKIC3Kdc89DjHKZ7-UvC0NVnhAW_yAfiD9U2upjQKx01q
@@ -219,7 +219,7 @@ Authorization: Bearer eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYxZDFjYTQ2Z
 PUT http://localhost:4001/api/v1/user/update-profile
 Accept: application/json
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYxZDFjYTQ2ZmE3YTE2MWNjMDk4NjVkOCIsInVzZXJuYW1lIjoiYXB1eXN0ZXJlbyIsImlhdCI6MTY1MTE2MjQxNCwiZXhwIjoxNjUxNzY3MjE0fQ.kyJo2xDz24VAMe9Z1pxp4DPHrcyEXu3P1dK4UUoYhTF4krcCTvf-Grdyk-8xeG0I
+Authorization: Bearer eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYxZDFjYTQ2ZmE3YTE2MWNjMDk4NjVkOCIsInVzZXJuYW1lIjoiYXB1eXN0ZXJlbyIsImlhdCI6MTY1MTE2MjQxNCwiZXhwIjoxNjUxNzY3MjE0fQ.kyJo2xDz24VAMe9Z1pxp4DPHrcyEXu3P1dK4UUoYhTF4krcCdvf-Grdyk-8xeG0I
 
   {
     "username":"apuystereo",
@@ -227,3 +227,10 @@ Authorization: Bearer eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYxZDFjYTQ2Z
     "country":"indoneisa",
     "countryCode":"id"
   }
+
+  ###
+//get chat
+###
+GET http://localhost:4000/api/v1/chat/current-chat?_page=1&_limit=10&_listchatId=61d3233d9297533fe8f90205
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYxZDFjYTQ2ZmE3YTE2MWNjMDk4NjVkOCIsInVzZXJuYW1lIjoiYXB1eXN0ZXJlbyIsImlhdCI6MTY0MTIzNDMyNSwiZXhwIjoxNjQxMzIwNzI1fQ.clzG04fGITQwSVImP3UEKIC3Kdc89DjHKZ7-UvC0NVnhAW_yAfiD9U2upjQKx01q

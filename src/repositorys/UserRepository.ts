@@ -19,7 +19,7 @@ interface iUserRepository {
   findAll(skip: number, limit: number): Promise<iUser[]>;
   findAllQuery<T>(query: T | any): Promise<iUser[]>;
   checkDupKey<T>(query: T | any, select: string): Promise<iUser | null>;
-  updateOne<uid, T>(_id: uid | any, body: T | any): Promise<iUser>;
+  updateOne<uid, T>(_id: uid | any, body: T | any): Promise<any>;
   findOneAndUpdate<_id, T>(_id: _id | any, body: T | any): Promise<iUser | null>;
 }
 
@@ -63,8 +63,9 @@ class UserRepository implements iUserRepository {
     return await users.findOne(query).select(select).exec();
   }
 
-  async updateOne<uid, T>(_id: uid | any, body: T | any): Promise<iUser> {
-    return await users.updateOne(_id, body, { new: true }).exec();
+  async updateOne<uid, T>(_id: uid | any, body: T | any): Promise<any> {
+    const data = await users.updateOne({ _id: _id._id }, body, { new: true }).exec();
+    return data;
   }
 
   async findOneAndUpdate<_id, T>(_id: _id | any, body: T | any): Promise<iUser | null> {

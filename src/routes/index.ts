@@ -8,6 +8,9 @@ class indexRoutes extends BaseRoute {
    * routes
    */
   public routes(): void {
+    this.router.get("/server-status", (req, res) => {
+      return res.status(200).send({ statusCode: res.statusCode, msg: "OK", err: null, desc: "server running.." });
+    });
     this.router.use("/user", UserRoute);
     this.router.use("/chat", ChatRoutes);
     this.router.get("/list-country", countryController.get);

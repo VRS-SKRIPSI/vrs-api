@@ -382,7 +382,7 @@ class UserController implements iUserController {
    */
   public async uploadPhotoProfile(req: Request, res: Response): Promise<Response> {
     const _id = res.locals.id;
-    const filename = req.file?.filename;
+    const filename = req?.file?.filename;
     try {
       const data = await UserRepository.findOne<{ _id: any }>({ _id: _id });
       if (data === null) {
@@ -399,6 +399,22 @@ class UserController implements iUserController {
       return res.status(404).send({ status: 404, msg: "Success.!", err: "user not found", data: data });
     } catch (err: any) {
       return res.status(500).send({ status: 500, msg: "Failed.!", err: "Something went wrong.!", data: null });
+    }
+  }
+
+  /**
+   * validateToken
+   */
+  public async validateToken(req: Request, res: Response): Promise<Response> {
+    const _id = res.locals.id;
+    try {
+      const data = await UserRepository.findOne<{ _id: any }>({ _id: _id });
+      if (data !== null) {
+        return res.status(200).send({ status: 200, msg: "OK", err: null, data: [] });
+      }
+      return res.status(404).send({ status: 404, msg: "!Failed", err: "Failed something went wrong", data: [] });
+    } catch (error) {
+      return res.status(404).send({ status: 404, msg: "!Failed", err: "Failed something went wrong", data: [] });
     }
   }
 }
